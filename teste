@@ -1,0 +1,32 @@
+[
+    {
+        "id": 1,
+        "title": "Title1",
+        "description": "desc1",
+        "language": 1,
+        "location": "Url1",
+        "InteractivityType": 1,
+        "context": 2,
+        "copyright": "Autor1"
+    },
+    {
+        "id": 2,
+        "title": "2",
+        "description": "2",
+        "language": 2,
+        "location": "Url2",
+        "InteractivityType": 1,
+        "context": 1,
+        "copyright": "2"
+    },
+    {
+        "id": 3,
+        "title": "title1",
+        "description": "desc1",
+        "language": 2,
+        "location": "url1",
+        "InteractivityType": 1,
+        "context": 1,
+        "copyright": "autor1"
+    }
+]

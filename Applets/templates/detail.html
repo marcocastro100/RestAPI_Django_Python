@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<p>Applet:{{Applet}}</p>
+<h3>___________________________Edit Applet Id :{{Applet.id}}____________________________</h3>
+<form method='POST'>{% csrf_token %}
+    {{formulario_modelo.as_p}}
+    <input type='submit' value='Save' />
+    <button> <a href="{% url 'delete' Applet.id %}" >Delete</a></button>
+    <button><a href=" {% url 'download' Applet.id %} " >WriteFile</a></button>
+</form>
+{% endblock %}
