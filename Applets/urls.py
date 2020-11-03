@@ -3,7 +3,7 @@ from . import views
 
 from rest_framework import routers
 router = routers.DefaultRouter()
-router.register('class',views.AppletView)
+router.register('rest',views.AppletView)
 
 urlpatterns = [
     path('',views.applets_list,name='list'),
@@ -11,6 +11,10 @@ urlpatterns = [
     path('create/',views.applets_create,name='create'),
     path('delete/<int:id>/',views.applets_delete,name='delete'),
     path('download/<int:id>/',views.applets_download,name='download'),
-    
-    path('class/',include(router.urls)),
+
+    path('api/',views.api_list.as_view(),name='api_list'),
+    path('api/<int:id>/',views.api_detail.as_view(),name='api_detail'),
+
+
+    path('rest/',include(router.urls)),
 ]

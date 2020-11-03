@@ -9,7 +9,7 @@ class AppletForm(forms.ModelForm):
             'description',
             'language',
             'location',
-            'InteractivityType',
+            'interactivity',
             'context',
             'copyright'
         ]

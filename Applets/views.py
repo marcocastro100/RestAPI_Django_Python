@@ -6,6 +6,7 @@ from .models import Applet #importing my model
 from .forms import AppletForm #import the forms based in the model
 from .serializers import AppletSerializer #importing serializer made to handle the model
 
+#======Custom admin page======
 import json
 def applets_list(request): #Root /applets: list all Applets models instances
     instance = Applet.objects.all(); #Catch all instances in the database
@@ -45,45 +46,65 @@ def applets_download(request,id):
     with open('./jsons/'+str(instance.id)+'.json','w') as file: file.write(instance_json);
     return(redirect('../../'));
 #=====================================================================
+
+#========API=========
+from django.shortcuts import get_object_or_404 #if item not exists, return 404 instad error page
+from rest_framework.views import APIView    #enables the use of class view (better looking and same as func)
+from rest_framework.response import Response #Smart response
+from rest_framework import status #status from response to avoid error page
+
+#Dealing with a external system requiring not specified applet in url=================================
+class api_list(APIView): 
+#Show all applets in json format
+    def get(self,request): #format=None: deal with extra url parameter (like .json)
+        instance = Applet.objects.all();
+        instance_dict = AppletSerializer(instance,many=True);
+        return(Response(instance_dict.data));
+#Create a new applet (post=create)
+    def post(self,request):
+        new_instance = request.data;
+        new_instance_dict = AppletSerializer(data=new_instance);
+        if(new_instance_dict.is_valid()):
+            new_instance_dict.save();
+            return Response(new_instance_dict.data,status=201); #201 = Created
+        else: return(Response(new_instance_dict.error,status=400)) #400 = BadRequest
+
+#External System requiring a specific applet=========================================================
+from django.views.decorators.csrf import csrf_exempt
+class api_detail(APIView): 
+#Gets the current instance of applet givened by url
+    def get_instance(self,id):
+        current_instance = Applet.objects.get(id=id);
+        return(current_instance);
+#Show the applet in json format    
+    def get(self,request,id):
+        instance = self.get_instance(id);
+        instance_dict = AppletSerializer(instance);
+        return(Response(instance_dict.data));
+#Modify the applet in the server database    
+    def put(self,request,id):
+        instance = self.get_instance(id);
+            # instance_dict = AppletSerializer(instance,data=request.data);
+        instance.title = request.data['title'];
+        instance.description = request.data['description'];
+        instance.language = request.data['language'];
+        instance.location = request.data['location'];
+        instance.interactivity = request.data['interactivity'];
+        instance.context = request.data['context'];
+        instance.copyright = request.data['copyright'];
+            # if(instance_dict.is_valid()):
+            #     instance.save();
+            #     return(Response(instance_dict.data));
+            # else:return(Reponse(instance_dict.errors,status=400))
+        instance.save();
+        return(Response(status=status.HTTP_200_OK));
+#Delete the applet from the server        
+    def delete(self,request,id):
+        instance = self.get_instance(id);
+        instance.delete()
+        return(Response(status=204)) #204 = No Content
+
 from rest_framework import viewsets
 class AppletView(viewsets.ModelViewSet):
     queryset = Applet.objects.all()
     serializer_class = AppletSerializer
-
-# from rest_framework.parsers import JSONParser #Convert string into JSON format
-# from rest_framework.renderers import JSONRenderer #Convert JSON format to dictionaries
-# from rest_framework.response import Response #Smart response/quest (httpresponse,jsonresponse,etc.)
-# from rest_framework.request import Request #//
-
-
-
-            # return(JsonResponse(serializer.data,safe=False)); #return in form of JSON, safe=false for serializing non dict data
-
-    # elif (request.method == 'POST'): #Case user is sending information (add a new applet)
-    #     received_data = JSONParser().parse(request); #string received as request converted to JSON
-    #     serializer =  AppletSerializer(data=received_data); #serialize the data
-    #     if(serialized.is_valid()): 
-    #         serializer.save();
-    #         return(JsonResponse(serializer.data,status=201));
-    #     return(JsonResponse(serilizer.error, status=400));
-
-    # if(request.method == 'GET'):
-        # serializer = AppletSerializer(applet); #selected applet in serialized mode
-        # data_json = json.dumps(serializer.data);
-    #     return(render(request,'Applets/templates/detail.html',
-    #         {'Applet':json.loads(data_json),
-    #         'formulario_modelo':AppletForm(request.POST)}))
-
-        # return(JsonResponse(serializer.data)); #return his JSON
-
-    # elif(request.method == 'PUT'):
-    #     received_data = JSONParser().parse(request); #string to JSON
-    #     serializer = AppletSerializer(applet, data=received_data);
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return JsonResponse(serializer.data)
-    #     return JsonResponse(serializer.errors, status=400)
-
-    # elif(request.method == 'DELETE'):
-    #     applet.delete()
-    #     return HttpResponse(status=204)
