@@ -13,6 +13,10 @@ class AppletForm(forms.ModelForm):
             'context',
             'copyright'
         ]
+class SearchForm(forms.ModelForm):
+    class Meta:
+        model = Applet;
+        fields = ['language','context']
 
 #Call this file in the views
 #create a object with AppletForm with a view

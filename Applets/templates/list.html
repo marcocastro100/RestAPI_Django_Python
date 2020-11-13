@@ -3,8 +3,9 @@
 <h3>___________________________List of Applets Json____________________________</h3>
 <ul>
     {% for applet in Applets %}
-        <li><a href="{% url 'detail' applet.id %}">{{applet.id}}</a> ----- {{applet}}</li>
+        <li><a href="{% url 'detail' applet.id %}">Edit: {{applet.id}}</a> ----- {{applet}}</li>
     {% endfor %}
 </ul>
 <button><a href="{% url 'create' %}">Create</a></button>
+<button><a href="{% url 'search' %}">Search</a></button>
 {% endblock %}

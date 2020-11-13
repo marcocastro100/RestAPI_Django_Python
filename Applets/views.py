@@ -3,7 +3,7 @@ from django.shortcuts import redirect #redirect to other pages
 from django.http import JsonResponse, HttpResponse #return data response to the page
 
 from .models import Applet #importing my model 
-from .forms import AppletForm #import the forms based in the model
+from .forms import AppletForm, SearchForm #import the forms based in the model
 from .serializers import AppletSerializer #importing serializer made to handle the model
 
 #======Custom admin page======
@@ -46,6 +46,20 @@ def applets_download(request,id):
     with open('./jsons/'+str(instance.id)+'.json','w') as file: file.write(instance_json);
     return(redirect('../../'));
 #=====================================================================
+def applets_search(request):
+    if(request.method == 'GET'):
+        instance_form = SearchForm(); 
+        return(render(request,'Applets/templates/search.html',{'form':instance_form}))
+
+    if(request.method == 'POST'):
+        requested = {};
+        requested['context'] = request.POST['context'];
+        requested['language'] = (request.POST['language']);
+        instances = Applet.objects.filter(context=requested['context'],language=requested['language']);
+        instances_dict = AppletSerializer(instances,many=True);
+        instances_json = json.dumps(instances_dict.data)
+        instance_form = SearchForm(); 
+        return(render(request,'Applets/templates/search.html',{'form':instance_form,'instances':json.loads(instances_json)}))
 
 #========API=========
 from django.shortcuts import get_object_or_404 #if item not exists, return 404 instad error page
@@ -68,7 +82,7 @@ class api_list(APIView):
             new_instance_dict.save();
             return Response(new_instance_dict.data,status=201); #201 = Created
         else: return(Response(new_instance_dict.error,status=400)) #400 = BadRequest
-
+#======================================================================================================
 #External System requiring a specific applet=========================================================
 from django.views.decorators.csrf import csrf_exempt
 class api_detail(APIView): 
@@ -104,7 +118,23 @@ class api_detail(APIView):
         instance.delete()
         return(Response(status=204)) #204 = No Content
 
-from rest_framework import viewsets
-class AppletView(viewsets.ModelViewSet):
-    queryset = Applet.objects.all()
-    serializer_class = AppletSerializer
+#======================================================================================================
+#Search for jsons returns by key search in the model==================================
+class api_search(APIView): 
+    def get(self,request): #only generates the form for search
+        return(HttpResponse('Envie um method POST com as keys: context=[Geometria, Calculo, Estatistica, Aritimetica, Trigonometria, Algebra, Probabilidade, Funcoes] e language=[EN,PT]'))
+
+    def post(self,request): #Makes a search for the entry data, returning the jsons maching the pattern
+        requested = {}; #makes a dictionary to receive the parameters
+        requested['context'] = request.data['context']; #add context data in dict
+        requested['language'] = request.data['language']; #add language data in dict
+        instances = Applet.objects.filter(context=requested['context'],language=requested['language']); #filter the applets to be returned
+        instances_dict = AppletSerializer(instances,many=True); #only a serialization for json formating
+        return(Response(instances_dict.data)); #sends the data in json format
+
+        
+
+# from rest_framework import viewsets
+# class AppletView(viewsets.ModelViewSet):
+#     queryset = Applet.objects.all()
+#     serializer_class = AppletSerializer
