@@ -7,11 +7,11 @@
     {% if form %} <!--Check if form was passed by parameter to show him-->
         {{form.as_p}}
     {% endif %}
-    <input type='submit' value='Save' />
+    <input type='submit' value='Search' />
 </form>
 {% if instances %}
     {% for item in instances %}
-        <p>{{item}}</p>
+        <p><a href=" {% url 'detail' item.id %}">Edit: {{item.id}}</a> ---- {{item}}</p>
     {% endfor %}
 {% endif %}
 

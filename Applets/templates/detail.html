@@ -8,4 +8,5 @@
     <button> <a href="{% url 'delete' Applet.id %}" >Delete</a></button>
     <button><a href=" {% url 'download' Applet.id %} " >WriteFile</a></button>
 </form>
+<embed type="video/webm" src="https://www.geogebra.org/classic/{{Applet.location}}" width="1000" height="500">
 {% endblock %}
