@@ -3,7 +3,7 @@
 {% block content %}
 <h3>___________________________Register a New Applet____________________________</h3>
 <form method='POST'>{% csrf_token %}
-    {{formulario_modelo.as_p}}
+    <table>{{form.as_table}}</table>
     <input type='submit' value='Save' />
 </form>
 {% endblock %}

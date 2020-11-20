@@ -1,4 +1,4 @@
-from django.http import HttpResponse #return data response to the page
+from django.http import HttpResponse, JsonResponse #return data response to the page
 from .models import Applet #Import applet DB model
 from .models import AppletForm, SearchForm #Import Applet form (all fields) and Search (context, language)
 from .models import AppletSerializer #importing created serializer (convert a structure to a dictionary)
@@ -8,12 +8,46 @@ from django.shortcuts import render #integrate the view to the html on templates
 from django.shortcuts import redirect #redirect to other pages
 import json #Work with json files
 
+#===================================================
+def LOM_serializer(applet): #Transforms a model applet in a dictionary in the IEEE LOM format
+    serialized = {
+        "Applet":{
+            "id":applet.id,
+            "title":applet.title,
+            "description":applet.description,
+            "url":applet.url,
+            "area":applet.area,
+        },
+        "General":{
+            "language":applet.language
+        },
+        "Life_cycle":{
+            "status":applet.status,
+            "contribute":applet.contribute
+        },
+        "Technical":{
+            "location":applet.location
+        },
+        "Educational":{
+            "interactivity_type":applet.interactivity_type,
+            "interactivity_resourse":applet.interactivity_resourse,
+            "interactivity_level":applet.interactivity_level,
+            "context":applet.context,
+            "difficulty":applet.difficulty
+        },
+        "Rights":{
+            "cost":applet.cost,
+            "copyright":applet.copyright
+        }
+    };
+    return(serialized);
 #==============================================================================
 def applets_list(request): #Root /applets: list all Applets models instances
+    json_list=[];
     instance = Applet.objects.all(); #Catch all instances in the database
-    instance_dict = AppletSerializer(instance,many=True); #Serializes the instances
-    instance_json = json.dumps(instance_dict.data) #Formats the instances to json for browser purposes
-    return(render(request,'Applets/templates/list.html',{'Applets':json.loads(instance_json)})) #Handles how that json will be showed in the browser (iteration)
+    for ins in instance:
+        json_list.append(LOM_serializer(ins));
+    return(render(request,'Applets/templates/list.html',{'Applets':json_list})) #Handles how that json will be showed in the browser (iteration)
 
 #=====================================================================
 def applets_detail(request,id): #Active when a applet id (pk) is selected (an is in the url (pk [urls.py]))
@@ -23,7 +57,7 @@ def applets_detail(request,id): #Active when a applet id (pk) is selected (an is
     instance_form =  AppletForm(request.POST or None, instance=instance); #Creates a form with POST (change) data, where the default values showed are the current values of the instance
     if (request.method == 'POST'):
         instance_form.save(); #verify if is valid and saves it
-    return(render(request,'Applets/templates/detail.html',{'Applet':json.loads(instance_json),'formulario_modelo':instance_form}))
+    return(render(request,'Applets/templates/detail.html',{'Applet':json.loads(instance_json),'form':instance_form}))
 
 #=====================================================================
 def applets_create(request): #creates a new applet
@@ -32,7 +66,7 @@ def applets_create(request): #creates a new applet
     elif(request.method == 'POST'):
         instance_form = AppletForm(request.POST); #Case sending information to DB, defines form as POST
         instance_form.save();
-    return(render(request,'Applets/templates/create.html',{'formulario_modelo':instance_form})) #sends to template to render it in html forms
+    return(render(request,'Applets/templates/create.html',{'form':instance_form})) #sends to template to render it in html forms
 
 #=====================================================================
 def applets_delete(request,id):
@@ -44,11 +78,9 @@ def applets_delete(request,id):
 import os #Controls the Operacional system (create a folder/file if not exists yet)
 def applets_download(request,id):
     instance = Applet.objects.get(id=id);
-    instance_dict = AppletSerializer(instance);
-    instance_json = json.dumps(instance_dict.data,indent=2);
-    if not os.path.exists('./jsons'): os.makedirs('./jsons'); #Check if folder jsons exists and creates if not
-    with open('./jsons/'+str(instance.id)+'.json','w') as file: file.write(instance_json);
-    return(redirect('../../'));
+    instance_dict = LOM_serializer(instance);
+    instance_json = json.dumps(instance_dict,indent=3);
+    return JsonResponse(instance_dict, json_dumps_params={'indent': 2})
 
 #=====================================================================
 def applets_search(request):
@@ -57,14 +89,25 @@ def applets_search(request):
         return(render(request,'Applets/templates/search.html',{'form':instance_form}))
 
     if(request.method == 'POST'):
-        requested = {}; #create a dictionary for filtering in the DB
-        requested['context'] = request.POST['context'];
-        requested['language'] = (request.POST['language']);
-        instances = Applet.objects.filter(context=requested['context'],language=requested['language']); #Take the instances in the BD with the informed keys
-        instances_dict = AppletSerializer(instances,many=True);
-        instances_json = json.dumps(instances_dict.data) #To json for correcly show in browser
-        instance_form = SearchForm(instance=instances[0]); #instances to continue with current search key values in the form
-        return(render(request,'Applets/templates/search.html',{'form':instance_form,'instances':json.loads(instances_json)}))
+        instances = Applet.objects.filter( #Take the instances in the BD with the informed keys
+            area = request.POST['area'],
+            language = request.POST['language'],
+            status = request.POST['status'],
+            contribute = request.POST['contribute'],
+            location = request.POST['location'],
+            interactivity_type = request.POST['interactivity_type'],
+            interactivity_resourse = request.POST['interactivity_resourse'],
+            interactivity_level = request.POST['interactivity_level'],
+            context = request.POST['context'],
+            difficulty = request.POST['difficulty'],
+            cost = request.POST['cost'],
+            copyright = request.POST['copyright']
+        ); 
+        instances_dict = [];
+        for inst in instances:
+            instances_dict.append(LOM_serializer(inst));
+        instance_form = SearchForm(request.POST or None, instance=instances[0] if instances else None); #instances to continue with current search key values in the form
+        return(render(request,'Applets/templates/search.html',{'form':instance_form,'instances':instances_dict}))
 
 #=====================================================================
 
@@ -131,12 +174,23 @@ class api_detail(APIView):
     #Search for jsons returns by key search in the model
 class api_search(APIView): 
     def get(self,request): #only generates the form for search
-        return(HttpResponse('Envie um method POST com as keys: context=[Geometria, Calculo, Estatistica, Aritimetica, Trigonometria, Algebra, Probabilidade, Funcoes] e language=[EN,PT]'))
+        return(HttpResponse('Para buscar metadados, envie um method POST para este endereço com as keys do IEEE-LOM:'))
 
     def post(self,request): #Makes a search for the entry data, returning the jsons maching the pattern
-        requested = {}; #makes a dictionary to receive the parameters
-        requested['context'] = request.data['context']; #add context data in dict
-        requested['language'] = request.data['language']; #add language data in dict
-        instances = Applet.objects.filter(context=requested['context'],language=requested['language']); #filter the applets to be returned
-        instances_dict = AppletSerializer(instances,many=True); #only a serialization for json formating
-        return(Response(instances_dict.data)); #sends the data in json format
+        instances = Applet.objects.filter( #Take the instances in the BD with the informed keys
+            area = request.data['area'],
+            language = request.data['language'],
+            contribute = request.data['contribute'],
+            location = request.data['location'],
+            interactivity_type = request.data['interactivity_type'],
+            interactivity_resourse = request.data['interactivity_resourse'],
+            interactivity_level = request.data['interactivity_level'],
+            context = request.data['context'],
+            difficulty = request.data['difficulty'],
+            cost = request.data['cost'],
+            copyright = request.data['copyright']
+        ); 
+        instances_dict = [];
+        for inst in instances:
+            instances_dict.append(LOM_serializer(inst));
+        return(Response(instances_dict)); #sends the data in json format

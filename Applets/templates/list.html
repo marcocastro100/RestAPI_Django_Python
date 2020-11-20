@@ -3,9 +3,10 @@
 <h3>___________________________List of Applets Json____________________________</h3>
 <ul>
     {% for applet in Applets %}
-        <li><a href="{% url 'detail' applet.id %}">Edit: {{applet.id}}</a> ----- {{applet}}</li>
+        <li><pre><a href="{% url 'detail' applet.Applet.id %}">Edit: {{applet.Applet.id}}</a> - {{applet}}</pre></li>
     {% endfor %}
+
 </ul>
-<button><a href="{% url 'create' %}">Create</a></button>
-<button><a href="{% url 'search' %}">Search</a></button>
+<button><a href="{% url 'create' %}">Create Applet</a></button>
+<button><a href="{% url 'search' %}">Search IEEE-LOM</a></button>
 {% endblock %}
