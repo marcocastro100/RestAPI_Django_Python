@@ -46,6 +46,10 @@ class Applet(models.Model):
     cost = models.CharField                     (choices=COST,default="none",max_length=20);
     copyright = models.CharField                (choices=COPYRIGHT,default="none",max_length=20);
 
+    def return_fields():
+        return(['id','title','description','url','area','language','status','contribute',
+        'location','interactivity_type','interactivity_resourse','interactivity_level','context',
+        'difficulty','cost','copyright']);
 
 ######################________Forms.py__________######################################################
 from django import forms #work with forms
@@ -58,7 +62,7 @@ class SearchForm(forms.ModelForm):
     class Meta:
         model = Applet;
         fields = "__all__";
-        exclude = ['id','title','description','url'];
+        # exclude = ['id','title','description','url'];
 
 ######################________Serializers.py__________##############################################
 from rest_framework import serializers #import a serializer
